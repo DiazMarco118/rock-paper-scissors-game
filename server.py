@@ -21,52 +21,57 @@ def determine_winner(choice1, choice2):
     else:
         return "player2"
 
-def get_valid_choice(client):
+def get_choice(client, prompt, valid_list=None):
     while True:
         try:
-            client.send(b"Your turn! Choose rock, paper, or scissors: ")
+            client.send(prompt.encode())
             choice = client.recv(1024).decode().strip().lower()
-            if choice in valid_choices:
+            if not valid_list or choice in valid_list:
                 return choice
             else:
-                client.send(b"Invalid choice. Please try again.\n")
-        except ConnectionResetError:
-            print("Client disconnected during input.")
+                client.send(b"Invalid input. Please try again.\n")
+        except:
             return None
 
 def handle_game(client1, client2):
     try:
-        choice1 = get_valid_choice(client1)
-        choice2 = get_valid_choice(client2)
+        client1.send(b"Da bat cap thanh cong. Tro choi bat dau!\n")
+        client2.send(b"Da bat cap thanh cong. Tro choi bat dau!\n")
 
-        # Nếu 1 trong 2 người thoát giữa chừng
-        if choice1 is None or choice2 is None:
-            try:
-                client1.send(b"Opponent disconnected. Game over.\n")
-            except:
-                pass
-            try:
-                client2.send(b"Opponent disconnected. Game over.\n")
-            except:
-                pass
-            return
+        while True:
+            choice1 = get_choice(client1, "Choose rock, paper, or scissors: ", valid_choices)
+            choice2 = get_choice(client2, "Choose rock, paper, or scissors: ", valid_choices)
 
-        result = determine_winner(choice1, choice2)
+            if not choice1 or not choice2:
+                try: client1.send(b"Opponent disconnected. Game over.\n")
+                except: pass
+                try: client2.send(b"Opponent disconnected. Game over.\n")
+                except: pass
+                break
 
-        # Gửi kết quả đến 2 client
-        if result == "draw":
-            msg = f"Both chose {choice1}. It's a draw!"
-            client1.send(msg.encode())
-            client2.send(msg.encode())
-        elif result == "player1":
-            client1.send(f"You win! {choice1} beats {choice2}".encode())
-            client2.send(f"You lose! {choice1} beats {choice2}".encode())
-        else:
-            client1.send(f"You lose! {choice2} beats {choice1}".encode())
-            client2.send(f"You win! {choice2} beats {choice1}".encode())
+            result = determine_winner(choice1, choice2)
 
-        # In log kết quả ra terminal
-        print(f"[LOG] Game result: {choice1} vs {choice2} => {result} won")
+            if result == "draw":
+                msg = f"Both chose {choice1}. It's a draw!"
+                client1.send(msg.encode())
+                client2.send(msg.encode())
+            elif result == "player1":
+                client1.send(f"You win! {choice1} beats {choice2}".encode())
+                client2.send(f"You lose! {choice1} beats {choice2}".encode())
+            else:
+                client1.send(f"You lose! {choice2} beats {choice1}".encode())
+                client2.send(f"You win! {choice2} beats {choice1}".encode())
+
+            print(f"[LOG] Game result: {choice1} vs {choice2} => {result} wins")
+
+            # Hỏi chơi tiếp không
+            again1 = get_choice(client1, "\nPlay again? (yes/no): ", ["yes", "no"])
+            again2 = get_choice(client2, "\nPlay again? (yes/no): ", ["yes", "no"])
+
+            if again1 != "yes" or again2 != "yes":
+                client1.send(b"Tro choi ket thuc. Cam on da choi!\n")
+                client2.send(b"Tro choi ket thuc. Cam on da choi!\n")
+                break
 
     finally:
         client1.close()
@@ -77,12 +82,14 @@ def wait_for_players():
         try:
             client, addr = server.accept()
             print(f"[INFO] Client connected from {addr}")
+            client.send(b"Da ket noi may chu. Dang tim doi thu...\n")
             clients.append(client)
 
             if len(clients) >= 2:
                 c1 = clients.pop(0)
                 c2 = clients.pop(0)
                 threading.Thread(target=handle_game, args=(c1, c2)).start()
+
         except Exception as e:
             print(f"[ERROR] {e}")
 

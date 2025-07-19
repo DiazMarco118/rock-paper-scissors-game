@@ -13,25 +13,19 @@ try:
         if not data:
             break
 
-        print(data)
+        print(data.strip())
 
-        # Nếu server thông báo kết thúc thì thoát
-        if "Game over" in data or "disconnected" in data:
+        if "Choose" in data or "Play again?" in data:
+            choice = input(">>> ").strip().lower()
+            client.send(choice.encode())
+
+        if "Game over" in data or "Tro choi ket thuc" in data:
             break
 
-        # Nếu được yêu cầu nhập lựa chọn
-        if "Choose" in data:
-            try:
-                choice = input(">>> ").strip().lower()
-                client.send(choice.encode())
-            except:
-                print("Lỗi khi gửi dữ liệu tới server.")
-                break
-
 except ConnectionRefusedError:
-    print("Không thể kết nối tới server. Đảm bảo server đang chạy.")
+    print("Khong the ket noi den server. Dam bao server dang chay.")
 except Exception as e:
-    print("Lỗi:", e)
+    print("Loi:", e)
 finally:
-    print("Bạn đã thoát khỏi trò chơi.")
+    print("Ban da thoat khoi tro choi.")
     client.close()
