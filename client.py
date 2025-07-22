@@ -15,7 +15,8 @@ try:
 
         print(data.strip())
 
-        if "Choose" in data or "Play again?" in data:
+        # Nếu server yêu cầu nhập (hỏi số ván, hoặc hỏi chơi tiếp, hoặc chọn kéo búa bao)
+        if "Choose" in data or "Play again?" in data or "bao nhieu van" in data.lower():
             choice = input(">>> ").strip().lower()
             client.send(choice.encode())
 
