@@ -15,12 +15,12 @@ try:
 
         print(data.strip())
 
-        # Nếu server yêu cầu nhập (hỏi số ván, hoặc hỏi chơi tiếp, hoặc chọn kéo búa bao)
-        if "Choose" in data or "Play again?" in data or "bao nhieu van" in data.lower():
+        # Nhận diện các câu hỏi cần nhập
+        if any(kw in data.lower() for kw in ["choose", "play again", "bao nhieu van", "choi tiep"]):
             choice = input(">>> ").strip().lower()
             client.send(choice.encode())
 
-        if "Game over" in data or "Tro choi ket thuc" in data:
+        if "game over" in data.lower() or "tro choi ket thuc" in data.lower():
             break
 
 except ConnectionRefusedError:
